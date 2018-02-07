@@ -1,0 +1,97 @@
+{
+    "dictionary": [
+	{
+	    "keyword":["李松廷","松廷","李松亭","松亭"],
+	    "answer":"lisongting",
+	    "isAudio":0,
+	    "flag":0
+	},
+	{
+	    "keyword":["汪鹏","王鹏"],
+	    "answer":"wangpeng",
+	    "isAudio":0,
+	    "flag":0
+	},
+	{
+	    "keyword":["常先明","常总"],
+	    "answer":"cxm",
+	    "isAudio":0,
+	    "flag":0
+	},
+	{
+	    "keyword":["方洋","方总"],
+	    "answer":"fangyang",
+	    "isAudio":0,
+	    "flag":0
+	},
+	{
+	    "keyword":["面试","会议"],
+	    "answer":"huiyishi",
+	    "isAudio":0,
+	    "flag":0
+	},
+        {
+            "keyword": [
+                "好",
+                "你好"
+            ],
+            "answer": "wav/welcome.wav",
+	    "isAudio":1,
+            "flag": 0
+        },
+        {
+            "keyword": [
+                "叫什么",
+                "名字"
+            ],
+            "answer": "wav/myname.wav",
+	    "isAudio":1,
+            "flag": 0
+        },
+        {
+            "keyword": [
+                "你多大",
+                "几岁"
+            ],
+            "answer": "wav/age.wav",
+	    "isAudio":1,
+            "flag": 0
+        },
+        {
+            "keyword":["来自"],
+            "answer":"wav/from.wav",
+	    "isAudio":1,
+            "flag":0
+        },
+        {
+            "keyword":["介绍","你"],
+            "answer":"wav/introduction.wav",
+	    "isAudio":1,
+            "flag":1
+        },
+	{
+	    "keyword":["你是谁"],
+	    "answer":"wav/iam.wav",
+	    "isAudio":1,
+	    "flag":0
+	},
+	{
+	    "keyword":["再见"],
+	    "answer":"wav/bye.wav",
+	    "isAudio":1,
+	    "flag":0
+	},
+	{
+	    "keyword":["高兴","见到你"],
+ 	    "answer":"wav/nicemeet.wav",
+	    "isAudio":1,
+	    "flag":1
+	},
+	{
+	    "keyword":["会做什么","你会什么"],
+	    "answer":"wav/ican.wav",
+	    "isAudio":1,
+	    "flag":0
+	}
+    ]
+}

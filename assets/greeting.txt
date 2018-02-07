@@ -1,0 +1,22 @@
+{
+    "greeting":[	
+	{
+            "name":"wangpeng",
+	    "greet_audio":"wav/greet_wangpeng.wav",
+            "reach_audio":"wav/reach_wangpeng.wav"
+	},
+	{
+            "name":"cxm",
+	    "greet_audio":"wav/greet_cxm.wav",
+            "reach_audio":"wav/reach_cxm.wav"
+	},
+	{
+            "name":"fangyang",
+	    "greet_audio":"wav/greet_fangyang.wav",
+            "reach_audio":"wav/reach_fangyang.wav"
+	}
+	
+	
+    ]
+
+}
