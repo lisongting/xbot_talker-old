@@ -12,25 +12,25 @@
 #include <std_msgs/String.h>
 #include <std_msgs/UInt32.h>
 #include <xbot_msgs/FaceResult.h>
-#include "AIUITest.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/document.h"
-#include "Talker.h"
-#include "speech_recognizer.h"
-#include "qisr.h"
-#include "msp_cmn.h"
-#include "msp_errors.h"
+//#include "AIUITest.h"
+//#include "rapidjson/writer.h"
+//#include "rapidjson/stringbuffer.h"
+//#include "rapidjson/document.h"
+//#include "Talker.h"
+//#include "speech_recognizer.h"
+//#include "qisr.h"
+//#include "msp_cmn.h"
+//#include "msp_errors.h"
 
-//#include "../include/AIUITest.h"
-//#include "../include/rapidjson/writer.h"
-//#include "../include/rapidjson/stringbuffer.h"
-//#include "../include/rapidjson/document.h"
-//#include "../include/Talker.h"
-//#include "../include/speech_recognizer.h"
-//#include "../include/qisr.h"
-//#include "../include/msp_cmn.h"
-//#include "../include/msp_errors.h"
+#include "../include/AIUITest.h"
+#include "../include/rapidjson/writer.h"
+#include "../include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/document.h"
+#include "../include/Talker.h"
+#include "../include/speech_recognizer.h"
+#include "../include/qisr.h"
+#include "../include/msp_cmn.h"
+#include "../include/msp_errors.h"
 
 using namespace std;
 
@@ -81,6 +81,7 @@ int ret;
 bool isPlayingAudio;
 string lastGoal;
 int recordCount = 0;
+bool isVerifying;
 
 mutex mutex_chat , mutex_playing_audio;
 condition_variable condition_chat , condition_playing_audio;
@@ -207,7 +208,7 @@ void* offline_voice_recog_thread(void* session_begin_params){
 
        sr_uninit(&iat);
        recordCount++;
-       if(recordCount==15){
+       if(recordCount==7){
            isChatting = false;
            cout<<"----------- Interacting Timeout. Stop Chatting --------"<<endl;
            std_msgs::UInt32 msg;
@@ -241,11 +242,33 @@ void onGoalReached(const std_msgs::String& msg){
 //得到人脸识别结果
 void onGetFaceResult(const xbot_msgs::FaceResult& faceResult){
 //    cout<<"onGetFaceResult  ---- tid: "<<this_thread::get_id()<<endl;
-    if(!isChatting){
-        cout<<"getFaceResult:"<<faceResult.name<<endl;
-        string staffName = faceResult.name;
-        talker.greetByName(staffName,&onPlayFinished);
+    cout<<"getFaceResult:"<<faceResult.name<<endl;
+    string tmpName = faceResult.name;
+    if(!isVerifying){
+        //如果不是处于验证模式，则正常进行交互
+        if(tmpName.find("nobody")==-1){
+            talker.greetByName(tmpName,&onPlayFinished);
+        }
+    }else{
+        //isVerifying == true表示进行人脸验证。得到人脸验证结果，如果为nobody表示没人(也可能是噪声引起)
+        if(tmpName.find("nobody")!=-1){
+             //表示目前没人交互
+            isChatting = false;
+            isVerifying =false;
+            std_msgs::UInt32 msg;
+            msg.data = 255;
+            next_loop_pub.publish(msg);
+
+        }else if(tmpName.find("unknown")!=-1){
+            //表示目前是有人的
+            isChatting = true;
+            condition_chat.notify_all();
+            isVerifying =false;
+            recordCount = 0;
+        }
+
     }
+
 
 }
 
@@ -260,7 +283,7 @@ void onPlayFinished(int code,string message){
         case REQUEST_GREET_STAFF:
         {
             cout<<"REQUEST_GREET_STAFF"<<endl;
-            sleep(10);
+            sleep(5);
             std_msgs::UInt32 msg;
             msg.data = 255;
             next_loop_pub.publish(msg);
@@ -297,11 +320,7 @@ void onPlayFinished(int code,string message){
             cout<<"Publish Goal: "<<message<<endl;
         }
         break;
-       case REQUEST_FOLLOW_ME:
-       {
-            cout<<"REQUEST_FOLLOW_ME"<<endl;
-       }
-       break;
+
        case REQUEST_REACH_GOAL:
        {
             sleep(5);
@@ -323,6 +342,24 @@ void onPlayFinished(int code,string message){
             goal_name_pub.publish(mes);
             cout<<"Publish Goal: "<<lastGoal<<endl;
        }
+       case REQUEST_AUDIO_UNMATCH:
+       {
+            cout<<"REQUEST_AUDIO_UNMATCH"<<endl;
+            isPlayingAudio = false;
+            condition_playing_audio.notify_all();
+            std_msgs::UInt32 msg;
+            //发送200表示进行人脸验证，验证当前xbot前方到底有没有人
+            msg.data = 200;
+            next_loop_pub.publish(msg);
+            isChatting = false;
+            isVerifying = true;
+       }
+       break;
+       case REQUEST_FOLLOW_ME:
+       {
+            cout<<"REQUEST_FOLLOW_ME"<<endl;
+       }
+       break;
        case REQUEST_SIMPLE_PLAY:
        {
            cout<<"REQUEST_SIMPLE_PLAY"<<endl;

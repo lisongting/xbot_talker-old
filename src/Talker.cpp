@@ -145,7 +145,7 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
             }
         }
         string audiofile = basePath+"/assets/wav/hard.wav";
-        play((char*)audiofile.c_str(),REQUEST_CHAT,callback);
+        play((char*)audiofile.c_str(),REQUEST_AUDIO_UNMATCH,callback);
         return 0;
 
     }else{

@@ -90,6 +90,9 @@ static const int REQUEST_REACH_GOAL = 77;
 //当中途被挡住时
 static const int REQUEST_MOVE_ABORT = 88;
 
+//没有在语音库中匹配到恰当的回答语(确实不会回答或者是噪声引起的误识别)
+static const int REQUEST_AUDIO_UNMATCH = 99;
+
 static void simple_call_back(int code,std::string message){
 
 }

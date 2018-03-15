@@ -3,4 +3,6 @@
 *.user
 *.d
 *.g
-
+*.ldata
+*.dat
+/assets/msc/res/gramBuild
