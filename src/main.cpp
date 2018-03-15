@@ -12,25 +12,25 @@
 #include <std_msgs/String.h>
 #include <std_msgs/UInt32.h>
 #include <xbot_msgs/FaceResult.h>
-//#include "AIUITest.h"
-//#include "rapidjson/writer.h"
-//#include "rapidjson/stringbuffer.h"
-//#include "rapidjson/document.h"
-//#include "Talker.h"
-//#include "speech_recognizer.h"
-//#include "qisr.h"
-//#include "msp_cmn.h"
-//#include "msp_errors.h"
+#include "AIUITest.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/document.h"
+#include "Talker.h"
+#include "speech_recognizer.h"
+#include "qisr.h"
+#include "msp_cmn.h"
+#include "msp_errors.h"
 
-#include "../include/AIUITest.h"
-#include "../include/rapidjson/writer.h"
-#include "../include/rapidjson/stringbuffer.h"
-#include "../include/rapidjson/document.h"
-#include "../include/Talker.h"
-#include "../include/speech_recognizer.h"
-#include "../include/qisr.h"
-#include "../include/msp_cmn.h"
-#include "../include/msp_errors.h"
+//#include "../include/AIUITest.h"
+//#include "../include/rapidjson/writer.h"
+//#include "../include/rapidjson/stringbuffer.h"
+//#include "../include/rapidjson/document.h"
+//#include "../include/Talker.h"
+//#include "../include/speech_recognizer.h"
+//#include "../include/qisr.h"
+//#include "../include/msp_cmn.h"
+//#include "../include/msp_errors.h"
 
 using namespace std;
 
