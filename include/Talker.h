@@ -67,31 +67,31 @@ static char session_record_begin_params[200] =
 typedef void  (*on_play_finished)(int , std::string);
 
 //简单的播放一个文件
-static const int REQUEST_SIMPLE_PLAY = 11;
+static const int REQUEST_SIMPLE_PLAY = 1;
 
 //对员工进行问候
-static const int REQUEST_GREET_STAFF = 22;
+static const int REQUEST_GREET_STAFF = 2;
 
 //对访客进行问候
-static const int REQUEST_GREET_VISITOR = 33;
+static const int REQUEST_GREET_VISITOR = 3;
 
 //查询目标点(表示前往员工工位或者前往办公室)
-static const int REQUEST_CHAT_QUERY_GOAL = 44;
+static const int REQUEST_CHAT_QUERY_GOAL = 4;
 
 //进行AI对话
-static const int REQUEST_CHAT = 55;
-
-//当机器人播放完"好的，请跟我来"之后触发此事件
-static const int REQUEST_FOLLOW_ME = 66;
+static const int REQUEST_CHAT = 5;
 
 //当到达了目标位置(员工工位)后，触发此事件
-static const int REQUEST_REACH_GOAL = 77;
+static const int REQUEST_REACH_GOAL = 6;
 
 //当中途被挡住时
-static const int REQUEST_MOVE_ABORT = 88;
+static const int REQUEST_MOVE_ABORT = 7;
 
 //没有在语音库中匹配到恰当的回答语(确实不会回答或者是噪声引起的误识别)
-static const int REQUEST_AUDIO_UNMATCH = 99;
+static const int REQUEST_AUDIO_UNMATCH = 8;
+
+//播放完hard.wav
+static const int REQUEST_VERIFY_COMPLETE = 9;
 
 static void simple_call_back(int code,std::string message){
 

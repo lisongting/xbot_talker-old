@@ -80,7 +80,6 @@ unsigned int g_buffersize = BUFFER_SIZE;
 int ret;
 bool isPlayingAudio;
 string lastGoal;
-int recordCount = 0;
 bool isVerifying;
 
 mutex mutex_chat , mutex_playing_audio;
@@ -207,15 +206,6 @@ void* offline_voice_recog_thread(void* session_begin_params){
        }
 
        sr_uninit(&iat);
-       recordCount++;
-       if(recordCount==7){
-           isChatting = false;
-           cout<<"----------- Interacting Timeout. Stop Chatting --------"<<endl;
-           std_msgs::UInt32 msg;
-           msg.data = 255;
-           next_loop_pub.publish(msg);
-           recordCount = 0;
-       }
 
     }
 }
@@ -261,10 +251,9 @@ void onGetFaceResult(const xbot_msgs::FaceResult& faceResult){
 
         }else if(tmpName.find("unknown")!=-1){
             //表示目前是有人的
-            isChatting = true;
-            condition_chat.notify_all();
+            string audiofile = basePath+"/assets/wav/hard.wav";
+            talker.play((char*)audiofile.c_str(),REQUEST_VERIFY_COMPLETE,&onPlayFinished);
             isVerifying =false;
-            recordCount = 0;
         }
 
     }
@@ -293,7 +282,6 @@ void onPlayFinished(int code,string message){
         case REQUEST_GREET_VISITOR:
         {
             cout<<"REQUEST_GREET_VISITOR"<<endl;
-            recordCount = 0;
             isPlayingAudio = false;
             condition_playing_audio.notify_all();
             isChatting = true;
@@ -313,7 +301,7 @@ void onPlayFinished(int code,string message){
             isChatting = false;
             cout<<"REQUEST_CHAT_QUERY_GOAL"<<endl;
             string file = basePath+"/assets/wav/followme.wav";
-            talker.play((char*)file.c_str(),REQUEST_FOLLOW_ME,onPlayFinished);
+            talker.play((char*)file.c_str(),REQUEST_SIMPLE_PLAY,onPlayFinished);
             lastGoal = message;
             mes.data = message;
             goal_name_pub.publish(mes);
@@ -345,19 +333,23 @@ void onPlayFinished(int code,string message){
        case REQUEST_AUDIO_UNMATCH:
        {
             cout<<"REQUEST_AUDIO_UNMATCH"<<endl;
-            isPlayingAudio = false;
-            condition_playing_audio.notify_all();
             std_msgs::UInt32 msg;
             //发送200表示进行人脸验证，验证当前xbot前方到底有没有人
             msg.data = 200;
             next_loop_pub.publish(msg);
             isChatting = false;
             isVerifying = true;
+
+            isPlayingAudio = false;
+            condition_playing_audio.notify_all();
+
        }
        break;
-       case REQUEST_FOLLOW_ME:
+       case REQUEST_VERIFY_COMPLETE:
        {
-            cout<<"REQUEST_FOLLOW_ME"<<endl;
+            cout<<"REQUEST_VERIFY_COMPLETE"<<endl;
+            isChatting = true;
+            condition_chat.notify_all();
        }
        break;
        case REQUEST_SIMPLE_PLAY:
@@ -426,15 +418,6 @@ void* record_thread(void* session_begin_params){
         }
 
         sr_uninit(&iat);
-        recordCount++;
-        if(recordCount==6){
-            isChatting = false;
-            cout<<"----------- Interacting Timeout. Stop Chatting --------"<<endl;
-            std_msgs::UInt32 msg;
-            msg.data = 255;
-            next_loop_pub.publish(msg);
-            recordCount = 0;
-        }
 
     }
 
@@ -525,9 +508,8 @@ void on_result(const char *result, char is_last){
         strncat(g_result, result, size);
         if(is_last){
             isPlayingAudio = true;
-            recordCount = 0;
-//            cout<<"Speech result : "<<g_result<<endl;
             const char* result = parse_result_from_json(g_result);
+            cout<<"Speech result : "<<result<<strlen(result)<<endl;
             talker.chat(result,onPlayFinished);
         }
     }

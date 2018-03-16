@@ -8,8 +8,8 @@
 #include <alsa/asoundlib.h>
 #include<thread>
 #include <sys/stat.h>
-#include "Talker.h"
 #include <fstream>
+#include "Talker.h"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -18,10 +18,12 @@
 #include "msp_errors.h"
 
 //#include "../include/Talker.h"
-//#include <fstream>
 //#include "../include/rapidjson/document.h"
 //#include "../include/rapidjson/writer.h"
 //#include "../include/rapidjson/stringbuffer.h"
+//#include "../include/qisr.h"
+//#include "../include/msp_cmn.h"
+//#include "../include/msp_errors.h"
 
 using namespace std;
 using namespace rapidjson;
@@ -101,6 +103,11 @@ int Talker::init(string basepath){
 //chatMsg是对话的文本形式(由讯飞语音识别得到)
 int Talker::chat(string  chatMsg,on_play_finished callback) {
     Value& json = dictionaryDoc["dictionary"];
+    if(chatMsg.length()<=2){
+        callback(REQUEST_AUDIO_UNMATCH,"");
+        return -1;
+    }
+
     if(json.IsArray()){
         for(int i =0;i<json.Size();i++){
             Value& v = json[i];
@@ -324,13 +331,8 @@ int Talker::play(char* file,int requestCode,on_play_finished  callback){
     int r = snd_pcm_drain(handle);
 
     snd_pcm_close(handle);
-    if(requestCode == REQUEST_FOLLOW_ME){
-       string tmp = goalName;
-       callback(requestCode,tmp);
-    }else{
-        callback(requestCode,"Playing Done");
-    }
 
+    callback(requestCode,"Playing Done");
     free(buffer);
 
     return 0;
