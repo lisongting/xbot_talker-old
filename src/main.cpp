@@ -508,9 +508,10 @@ void on_result(const char *result, char is_last){
         strncat(g_result, result, size);
         if(is_last){
             isPlayingAudio = true;
-            const char* result = parse_result_from_json(g_result);
-            cout<<"Speech result : "<<result<<strlen(result)<<endl;
-            talker.chat(result,onPlayFinished);
+            cout<<g_result<<endl;
+            const char* final_result = parse_result_from_json(g_result);
+            cout<<"Speech result : "<<final_result<<endl;
+            talker.chat(final_result,onPlayFinished);
         }
     }
 }
@@ -548,7 +549,8 @@ const char* parse_result_from_json(char*  jsonContent){
     doc.Parse(jsonContent);
     string empty = "";
     rapidjson::Value& vConfidence = doc["sc"];
-    if(vConfidence.GetInt()<50){
+    if(vConfidence.GetInt()<20){
+        cout<<"conficence of recognized words is too low"<<endl;
         return empty.c_str();
     }
     rapidjson::Value& wordArr = doc["ws"];
