@@ -510,8 +510,9 @@ void on_result(const char *result, char is_last){
             isPlayingAudio = true;
             cout<<g_result<<endl;
             const char* final_result = parse_result_from_json(g_result);
-            cout<<"Speech result : "<<final_result<<endl;
-            talker.chat(final_result,onPlayFinished);
+            string s(final_result);
+            cout<<"Speech result : "<<s<<endl;
+            talker.chat(s,onPlayFinished);
         }
     }
 }
