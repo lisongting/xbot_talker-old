@@ -151,8 +151,8 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
                 cout<<"Error occurs when parsing the "<<i<<" object from dictionary"<<endl;
             }
         }
-        string audiofile = basePath+"/assets/wav/hard.wav";
-        play((char*)audiofile.c_str(),REQUEST_AUDIO_UNMATCH,callback);
+//        string audiofile = basePath+"/assets/wav/hard.wav";
+//        play((char*)audiofile.c_str(),REQUEST_AUDIO_UNMATCH,callback);
         return 0;
 
     }else{
