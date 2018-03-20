@@ -281,6 +281,7 @@ void onPlayFinished(int code,string message){
         {
             cout<<"REQUEST_GREET_VISITOR"<<endl;
             isPlayingAudio = false;
+            condition_playing_audio.notify_one();
             isChatting = true;
             condition_chat.notify_one();
         }
