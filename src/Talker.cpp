@@ -330,7 +330,11 @@ int Talker::play(char* file,int requestCode,on_play_finished  callback){
         ret = snd_pcm_writei(handle, buffer, frames);
     }
     //cout<<"duration_second:"<<duration_second<<endl;
-    int r = snd_pcm_drain(handle);
+    if(requestCode == REQUEST_GREET_VISITOR){
+        sleep(duration_second-1);
+    }else{
+        int r = snd_pcm_drain(handle);
+    }
     callback(requestCode,"Playing Done");
 
     snd_pcm_close(handle);
