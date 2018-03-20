@@ -309,7 +309,7 @@ void onPlayFinished(int code,string message){
 
        case REQUEST_REACH_GOAL:
        {
-            sleep(5);
+            sleep(2);
             cout<<"REQUEST_REACH_GOAL"<<endl;
             string str = "origin";
             lastGoal = str;
