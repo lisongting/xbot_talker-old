@@ -55,7 +55,6 @@ void on_result(const char *result, char is_last);
 void on_speech_begin();
 void on_speech_end(int reason);
 void signal_handler(int s);
-void* record_thread(void* session_begin_params);
 
 void* offline_voice_recog_thread(void* session_begin_params);
 int build_grm_cb(int ecode, const char *info, void *udata);
@@ -111,7 +110,7 @@ int main(int argc,char** argv){
     }else{
         cout<<"Talker init success"<<endl;
     }
-    ASR_RES_PATH = "fo|res/common.jet";  //这个路径前必须加一个|fo，否则就会语法构建不通过
+    ASR_RES_PATH = "fo|res/common.jet";  //这个路径前必须加一个fo|，否则就会语法构建不通过
     GRAMMAR_BUILD_PATH = "res/gramBuild";
     GRAMMAR_FILE = basePath+"/assets/grammar.bnf";//自定义语法文件
 
@@ -124,7 +123,8 @@ int main(int argc,char** argv){
 
     memset(&asr_data, 0, sizeof(UserData));
     cout<<"Start building offline grammar for recognition ..."<<endl;
-    ret = build_grammar(&asr_data);  //第一次使用某语法进行识别，需要先构建语法网络，获取语法ID，之后使用此语法进行识别，无需再次构建
+     //第一次使用某语法进行识别，需要先构建语法网络，获取语法ID，之后使用此语法进行识别，无需再次构建
+    ret = build_grammar(&asr_data);
     if (MSP_SUCCESS != ret) {
         cout<<"Building grammar failed!"<<endl;
        exit(0);
@@ -175,8 +175,8 @@ void* offline_voice_recog_thread(void* session_begin_params){
         condition_chat.wait(lock1,[]{return isChatting;});
 
         signal(SIGINT,signal_handler);
-        cout<<"\n-----------Start Chatting--------"<<endl;
-        cout<<"You can speak to me(record  for 10 seconds) : "<<endl;
+        cout<<"-----------Start Chatting--------"<<endl;
+        cout<<"You can speak to me : "<<endl;
 
         errcode = sr_init(&iat, (char*)session_begin_params, SR_MIC, &recnotifier);
         if (errcode) {
@@ -185,7 +185,7 @@ void* offline_voice_recog_thread(void* session_begin_params){
         }
         errcode = sr_start_listening(&iat);
         if (errcode) {
-            cout<<"Start listen failed . code: "<< errcode<<endl;
+            cout<<"Start listening failed. code: "<< errcode<<endl;
         }
         //这里只睡眠4秒
         //由于讯飞sdk的原因，底层录音三秒就会停止录音，按照官方文档中设置了参数也没有用(貌似是 底层bug)
@@ -193,7 +193,7 @@ void* offline_voice_recog_thread(void* session_begin_params){
        sleep(4);
        errcode = sr_stop_listening(&iat);
        if (errcode) {
-           cout<<"Stop listening failed  code:"<<errcode<<endl;
+           cout<<"Stop listening failed. code:"<<errcode<<endl;
        }
        cout<<"Recording completed"<<endl;
 
@@ -255,9 +255,7 @@ void onGetFaceResult(const xbot_msgs::FaceResult& faceResult){
             talker.play((char*)audiofile.c_str(),REQUEST_VERIFY_COMPLETE,&onPlayFinished);
             isVerifying =false;
         }
-
     }
-
 
 }
 
@@ -283,9 +281,8 @@ void onPlayFinished(int code,string message){
         {
             cout<<"REQUEST_GREET_VISITOR"<<endl;
             isPlayingAudio = false;
-            condition_playing_audio.notify_all();
             isChatting = true;
-            condition_chat.notify_all();
+            condition_chat.notify_one();
         }
 
         break;
@@ -360,67 +357,6 @@ void onPlayFinished(int code,string message){
        default:
        break;
     }
-}
-
-//在线语音识别线程
-void* record_thread(void* session_begin_params){
-//    cout<<"start record thread  "<<this_thread::get_id()<<endl;
-    string login_parameters = "appid = 5a52e95f, work_dir = "+basePath+"/assets";
-    int ret = MSPLogin(NULL, NULL, login_parameters.c_str());
-    if (MSP_SUCCESS != ret)	{
-        cout<<"MSPLogin failed , Error code  "<<ret<<endl;
-        return NULL;
-    }
-    while(true){
-        int errcode;
-        struct speech_rec iat;
-        struct speech_rec_notifier recnotifier = {
-                    on_result,
-                    on_speech_begin,
-                    on_speech_end
-        };
-
-        //对话同步锁
-        //问候完访客时 -- 开启该线程
-        //对话60s超时或得到目标位置点  -- 挂起该线程
-        unique_lock<mutex> lock1(mutex_chat);
-        condition_chat.wait(lock1,[]{return isChatting;});
-
-        signal(SIGINT,signal_handler);
-        cout<<"\n-----------Start Chatting--------"<<endl;
-        cout<<"You can speak to me(record  for 10 seconds) : "<<endl;
-
-        errcode = sr_init(&iat, (char*)session_begin_params, SR_MIC, &recnotifier);
-        if (errcode) {
-            cout<<"Speech recognizer init failed   code:"<<errcode<<endl;
-            return NULL;
-        }
-        errcode = sr_start_listening(&iat);
-        if (errcode) {
-            cout<<"Start listening failed . code:"<<errcode<<endl;
-        }
-
-        /* record for 10 seconds */
-        sleep(10);
-
-        errcode = sr_stop_listening(&iat);
-        if (errcode) {
-            cout<<"Stop listening failed  code:"<<errcode<<endl;
-        }
-        cout<<"Recording completed"<<endl;
-
-        //语音播放同步锁
-        //即将开启下一轮录音，判断当前是否在播放语音
-        //如果在播放语音，则挂起该线程，等待语音播放完
-        if(isPlayingAudio){
-            unique_lock<mutex> lock2(mutex_playing_audio);
-            condition_playing_audio.wait(lock2,[]{return !isPlayingAudio;});
-        }
-
-        sr_uninit(&iat);
-
-    }
-
 }
 
 //构建离线识别语法的回调函数
@@ -508,7 +444,7 @@ void on_result(const char *result, char is_last){
         strncat(g_result, result, size);
         if(is_last){
             isPlayingAudio = true;
-            cout<<g_result<<endl;
+//            cout<<g_result<<endl;
             const char* final_result = parse_result_from_json(g_result);
             string s(final_result);
             cout<<"Speech result : "<<s<<endl;
