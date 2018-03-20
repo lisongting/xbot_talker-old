@@ -270,7 +270,7 @@ void onPlayFinished(int code,string message){
         case REQUEST_GREET_STAFF:
         {
             cout<<"REQUEST_GREET_STAFF"<<endl;
-            sleep(5);
+            sleep(10);
             std_msgs::UInt32 msg;
             msg.data = 255;
             next_loop_pub.publish(msg);
