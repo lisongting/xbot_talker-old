@@ -121,13 +121,13 @@
 	    "flag":0
 	},
 	{
-			"keyword":["向前走","向前走一步","向后退","向后退一步"],
+			"keyword":["向前走","向前走一步"],
 			"answer":"move_go_forward",
 			"isAudio":0,
 	    "flag":0
 	},
 	{
-			"keyword":["向后走","向后走一步"],
+			"keyword":["向后走","向后走一步","向后退","向后退一步"],
 			"answer":"move_go_back",
 			"isAudio":0,
 	    "flag":0
