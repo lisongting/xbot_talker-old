@@ -93,6 +93,9 @@ static const int REQUEST_AUDIO_UNMATCH = 8;
 //播放完hard.wav
 static const int REQUEST_VERIFY_COMPLETE = 9;
 
+//语音控制Xbot进行移动
+static const int REQUEST_MOVE = 10;
+
 static void simple_call_back(int code,std::string message){
 
 }

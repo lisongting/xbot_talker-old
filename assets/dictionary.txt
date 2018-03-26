@@ -1,12 +1,6 @@
 {
     "dictionary": [
 	{
-	    "keyword":["李松廷","松廷","李松亭","松亭"],
-	    "answer":"lisongting",
-	    "isAudio":0,
-	    "flag":0
-	},
-	{
 	    "keyword":["汪鹏","王鹏"],
 	    "answer":"wangpeng",
 	    "isAudio":0,
@@ -25,50 +19,41 @@
 	    "flag":0
 	},
 	{
-	    "keyword":["面试","会议"],
+	    "keyword":["面试","会议","会议室"],
 	    "answer":"huiyishi",
 	    "isAudio":0,
 	    "flag":0
 	},
-        {
-            "keyword": [
-                "好",
-                "你好"
-            ],
-            "answer": "wav/welcome.wav",
+  {
+      "keyword": ["你好"],
+      "answer": "wav/welcome.wav",
 	    "isAudio":1,
-            "flag": 0
-        },
-        {
-            "keyword": [
-                "叫什么",
-                "名字"
-            ],
-            "answer": "wav/myname.wav",
+      "flag": 0
+  },
+  {
+      "keyword": ["叫什么","名字"],
+      "answer": "wav/myname.wav",
 	    "isAudio":1,
-            "flag": 0
-        },
-        {
-            "keyword": [
-                "你多大",
-                "几岁"
-            ],
-            "answer": "wav/age.wav",
+      "flag": 0
+  },
+  {
+      "keyword": ["你多大","几岁"],
+      "answer": "wav/age.wav",
 	    "isAudio":1,
-            "flag": 0
-        },
-        {
-            "keyword":["来自"],
-            "answer":"wav/from.wav",
+      "flag": 0
+	},
+  {
+      "keyword":["你来自"],
+      "answer":"wav/from.wav",
 	    "isAudio":1,
-            "flag":0
-        },
-        {
-            "keyword":["介绍","你"],
-            "answer":"wav/introduction.wav",
+      "flag":0
+  },
+  {
+      "keyword":["介绍","你"],
+      "answer":"wav/introduction.wav",
 	    "isAudio":1,
-            "flag":1
-        },
+      "flag":1
+  },
 	{
 	    "keyword":["你是谁"],
 	    "answer":"wav/iam.wav",
@@ -92,6 +77,72 @@
 	    "answer":"wav/ican.wav",
 	    "isAudio":1,
 	    "flag":0
+	},
+	{
+			"keyword":["快递"],
+			"answer":"wav/packet.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["你的爱好"],
+			"answer":"wav/likesing.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["爱吃什么"],
+			"answer":"wav/likeeat.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["生日是几号"],
+			"answer":"wav/birthday.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["你住在哪里"],
+			"answer":"wav/live.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["你几点上班"],
+			"answer":"wav/worktime.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["最喜欢的明星"],
+			"answer":"wav/likestar.wav",
+			"isAudio":1,
+	    "flag":0
+	},
+	{
+			"keyword":["向前走","向前走一步","向后退","向后退一步"],
+			"answer":"move_go_forward",
+			"isAudio":0,
+	    "flag":0
+	},
+	{
+			"keyword":["向后走","向后走一步"],
+			"answer":"move_go_back",
+			"isAudio":0,
+	    "flag":0
+	},
+	{
+			"keyword":["向左转","向左旋转"],
+			"answer":"move_rotate_left",
+			"isAudio":0,
+	    "flag":0
+	},
+	{
+			"keyword":["向右转","向右旋转"],
+			"answer":"move_rotate_right",
+			"isAudio":0,
+	    "flag":0
 	}
-    ]
+  ]
 }

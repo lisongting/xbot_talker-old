@@ -12,6 +12,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/UInt32.h>
 #include <xbot_msgs/FaceResult.h>
+#include <geometry_msgs/Twist.h>
 #include "AIUITest.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -59,15 +60,17 @@ void signal_handler(int s);
 void* offline_voice_recog_thread(void* session_begin_params);
 int build_grm_cb(int ecode, const char *info, void *udata);
 int build_grammar(UserData *udata);
-const char* parse_result_from_json(char*  jsonContent);
+const string parse_result_from_json(char*  jsonContent);
 
 const char* subscribe_topic_goal = "/office/goal_reached";
 const char* subscribe_topic_face_recog ="/office/face_result";
 const char* goal_name_pub_topic ="/office/goal_name";//携带的数据为拼音
 const char* next_loop_pub_topic = "/office/next_loop";
+const char* movement_pub_topic = "/cmd_vel_mux/input/teleop";
 string basePath ;
 ros::Publisher goal_name_pub;
 ros::Publisher next_loop_pub;
+ros::Publisher mov_control_pub;
 ros::Subscriber faceRecogSubscriber;
 ros::Subscriber goalReachSubscriber;
 IAIUIAgent *agent ;
@@ -97,6 +100,7 @@ int main(int argc,char** argv){
     ros::NodeHandle nodeHandle;
     goal_name_pub =  nodeHandle.advertise<std_msgs::String>(goal_name_pub_topic,1);
     next_loop_pub = nodeHandle.advertise<std_msgs::UInt32>(next_loop_pub_topic,1);
+    mov_control_pub = nodeHandle.advertise<geometry_msgs::Twist>(movement_pub_topic,1);
 
     faceRecogSubscriber = nodeHandle.subscribe(subscribe_topic_face_recog,10,onGetFaceResult);
     goalReachSubscriber = nodeHandle.subscribe(subscribe_topic_goal,10,onGoalReached);
@@ -306,9 +310,8 @@ void onPlayFinished(int code,string message){
             cout<<"Publish Goal: "<<message<<endl;
         }
         break;
-
-       case REQUEST_REACH_GOAL:
-       {
+        case REQUEST_REACH_GOAL:
+        {
             sleep(2);
             cout<<"REQUEST_REACH_GOAL"<<endl;
             string str = "origin";
@@ -318,18 +321,18 @@ void onPlayFinished(int code,string message){
             //发布消息给SLAM，以回到出发点
             goal_name_pub.publish(mes);
             cout<<"Publish Goal: "<<str<<endl;
-       }
-       break;
-       case REQUEST_MOVE_ABORT:
-       {
+        }
+        break;
+        case REQUEST_MOVE_ABORT:
+        {
             cout<<"REQUEST_MOVE_ABORT"<<endl;
             sleep(5);
             mes.data = lastGoal;
             goal_name_pub.publish(mes);
             cout<<"Publish Goal: "<<lastGoal<<endl;
-       }
-       case REQUEST_AUDIO_UNMATCH:
-       {
+        }
+        case REQUEST_AUDIO_UNMATCH:
+        {
             cout<<"REQUEST_AUDIO_UNMATCH"<<endl;
             std_msgs::UInt32 msg;
             //发送200表示进行人脸验证，验证当前xbot前方到底有没有人
@@ -340,23 +343,63 @@ void onPlayFinished(int code,string message){
 
             isPlayingAudio = false;
             condition_playing_audio.notify_all();
-
-       }
-       break;
-       case REQUEST_VERIFY_COMPLETE:
-       {
+        }
+        break;
+        case REQUEST_VERIFY_COMPLETE:
+        {
             cout<<"REQUEST_VERIFY_COMPLETE"<<endl;
             isChatting = true;
             condition_chat.notify_all();
-       }
-       break;
-       case REQUEST_SIMPLE_PLAY:
-       {
+        }
+        break;
+        case REQUEST_MOVE:
+        {
+            cout<<"REQUEST_MOVE :"<<message<<endl;
+            isChatting = false;
+            geometry_msgs::Twist twist;
+            twist.linear.x = 0;
+            twist.linear.y = 0;
+            twist.linear.z = 0;
+            twist.angular.x = 0;
+            twist.angular.y = 0;
+            twist.angular.z = 0;
+            if(message.find("move_go_forward")!=-1){
+                twist.linear.x = 0.1;
+                mov_control_pub.publish(twist);
+                sleep(2);
+                twist.linear.x = 0;
+            }else if(message.find("move_go_back")!=-1){
+                twist.linear.x = -0.1;
+                mov_control_pub.publish(twist);
+                sleep(2);
+                twist.linear.x = 0;
+            }else if(message.find("move_rotate_left")!=-1){
+                twist.angular.z = 0.78;
+                mov_control_pub.publish(twist);
+                sleep(3);
+                twist.angular.z = 0;
+            }else if(message.find("move_rotate_right")!=-1){
+                twist.angular.z = -0.78;
+                mov_control_pub.publish(twist);
+                sleep(3);
+                 twist.angular.z = 0;
+            }else{
+                cout<<"unknown message:"<<message<<endl;
+            }
+            mov_control_pub.publish(twist);
+            isPlayingAudio = false;
+            condition_playing_audio.notify_all();
+            isChatting = true;
+            condition_chat.notify_all();
+        }
+        break;
+        case REQUEST_SIMPLE_PLAY:
+        {
            cout<<"REQUEST_SIMPLE_PLAY"<<endl;
-       }
-       break;
-       default:
-       break;
+        }
+        break;
+        default:
+        break;
     }
 }
 
@@ -445,11 +488,11 @@ void on_result(const char *result, char is_last){
         strncat(g_result, result, size);
         if(is_last){
             isPlayingAudio = true;
-//            cout<<g_result<<endl;
-            const char* final_result = parse_result_from_json(g_result);
-            string s(final_result);
-            cout<<"Speech result : "<<s<<endl;
-            talker.chat(s,onPlayFinished);
+            cout<<g_result<<endl;
+
+            const string final_result = parse_result_from_json(g_result);
+            cout<<"Speech result : "<<final_result.c_str()<<endl;
+            talker.chat(final_result,onPlayFinished);
         }
     }
 }
@@ -482,7 +525,7 @@ void on_speech_end(int reason){
 }
 
 //离线语音识别时，从返回结果的json中解析出语音识别结果
-const char* parse_result_from_json(char*  jsonContent){
+const string parse_result_from_json(char*  jsonContent){
     rapidjson::Document doc ;
     doc.Parse(jsonContent);
     string empty = "";
@@ -500,10 +543,10 @@ const char* parse_result_from_json(char*  jsonContent){
             rapidjson::Value& word = contentWord[0];
             string result = word["w"].GetString();
              cout<<"result:"<<result<<"|confidence:"<<vConfidence.GetInt()<<endl;
-            return result.c_str();
+            return result;
         }
     }
-    return empty.c_str();
+    return empty;
 }
 
 void signal_handler(int s){

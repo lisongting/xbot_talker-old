@@ -121,10 +121,16 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
                     for(int j=0;j<words.Size();j++){
                         if(chatMsg.find(words[j].GetString())!=-1){
                             Value& isAudio = v["isAudio"];
-                            if(isAudio.GetInt()==0){
+                            if(isAudio.GetInt()==0){                  
                                 Value& answer = v["answer"];
                                 goalName = answer.GetString();
-                                callback(REQUEST_CHAT_QUERY_GOAL,answer.GetString());
+                                if(goalName.find("move")!=-1){
+                                    //如果包含move关键字，则表示是控制移动
+                                    callback(REQUEST_MOVE,goalName);
+                                }else{
+                                    //如果不包含move关键字，表示前往指定目标点
+                                    callback(REQUEST_CHAT_QUERY_GOAL,answer.GetString());
+                                }
                                 return 0;
                             }else{
                                 string audiofile = basePath+"/assets/"+v["answer"].GetString();
