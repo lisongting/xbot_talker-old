@@ -1,7 +1,7 @@
 {
     "dictionary": [
 	{
-	    "keyword":["汪鹏","王鹏"],
+	    "keyword":["汪鹏"],
 	    "answer":"wangpeng",
 	    "isAudio":0,
 	    "flag":0
@@ -49,7 +49,7 @@
       "flag":0
   },
   {
-      "keyword":["介绍","你"],
+      "keyword":["介绍","你","自"],
       "answer":"wav/introduction.wav",
 	    "isAudio":1,
       "flag":1
@@ -73,7 +73,7 @@
 	    "flag":1
 	},
 	{
-	    "keyword":["会做什么","你会什么"],
+	    "keyword":["会做什么","你会什么","你会做什么"],
 	    "answer":"wav/ican.wav",
 	    "isAudio":1,
 	    "flag":0
@@ -85,40 +85,10 @@
 	    "flag":0
 	},
 	{
-			"keyword":["你的爱好"],
-			"answer":"wav/likesing.wav",
+			"keyword":["介绍","重德智能"],
+			"answer":"wav/intro_zdzn.wav",
 			"isAudio":1,
-	    "flag":0
-	},
-	{
-			"keyword":["爱吃什么"],
-			"answer":"wav/likeeat.wav",
-			"isAudio":1,
-	    "flag":0
-	},
-	{
-			"keyword":["生日是几号"],
-			"answer":"wav/birthday.wav",
-			"isAudio":1,
-	    "flag":0
-	},
-	{
-			"keyword":["你住在哪里"],
-			"answer":"wav/live.wav",
-			"isAudio":1,
-	    "flag":0
-	},
-	{
-			"keyword":["你几点上班"],
-			"answer":"wav/worktime.wav",
-			"isAudio":1,
-	    "flag":0
-	},
-	{
-			"keyword":["最喜欢的明星"],
-			"answer":"wav/likestar.wav",
-			"isAudio":1,
-	    "flag":0
+	    "flag":1
 	},
 	{
 			"keyword":["向前走","向前走一步"],
