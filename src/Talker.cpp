@@ -103,7 +103,7 @@ int Talker::init(string basepath){
 //chatMsg是对话的文本形式(由讯飞语音识别得到)
 int Talker::chat(string  chatMsg,on_play_finished callback) {
     Value& json = dictionaryDoc["dictionary"];
-    cout<<chatMsg<<" ,length:"<<chatMsg.length()<<endl;
+    cout<<"chat:"<<chatMsg<<" ,length:"<<chatMsg.length()<<endl;
     if(chatMsg.length()<=2){
         callback(REQUEST_AUDIO_UNMATCH,"");
         return -1;
@@ -158,9 +158,6 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
                 cout<<"Error occurs when parsing the "<<i<<" object from dictionary"<<endl;
             }
         }
-
-//        string audiofile = basePath+"/assets/wav/hard.wav";
-//        play((char*)audiofile.c_str(),REQUEST_AUDIO_UNMATCH,callback);
         return 0;
 
     }else{
@@ -341,7 +338,10 @@ int Talker::play(char* file,int requestCode,on_play_finished  callback){
     }else{
         int r = snd_pcm_drain(handle);
     }
-    callback(requestCode,"Playing Done");
+
+    if(requestCode != REQUEST_AUDIO_UNMATCH){
+        callback(requestCode,"Playing Done");
+    }
 
     snd_pcm_close(handle);
     free(buffer);

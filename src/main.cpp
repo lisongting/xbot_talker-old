@@ -220,6 +220,8 @@ void onGoalReached(const std_msgs::String& msg){
     cout<<"onGoalReached:"<<goal_name<<endl;
     if(goal_name.find("abort")!=-1){
         string file = basePath+"/assets/wav/abort.wav";
+        isPlayingAudio = true;
+        isChatting = false;
         talker.play((char*)file.c_str(),REQUEST_MOVE_ABORT,onPlayFinished);
     }else if(goal_name.find("origin")==-1){
         //表示到达了员工位置处
@@ -278,7 +280,6 @@ void onPlayFinished(int code,string message){
             std_msgs::UInt32 msg;
             msg.data = 255;
             next_loop_pub.publish(msg);
-
         }
         break;
         case REQUEST_GREET_VISITOR:
@@ -326,14 +327,21 @@ void onPlayFinished(int code,string message){
         case REQUEST_MOVE_ABORT:
         {
             cout<<"REQUEST_MOVE_ABORT"<<endl;
+            isPlayingAudio = false;
+            isChatting = false;
+            condition_playing_audio.notify_one();
             sleep(5);
             mes.data = lastGoal;
             goal_name_pub.publish(mes);
             cout<<"Publish Goal: "<<lastGoal<<endl;
+
         }
         case REQUEST_AUDIO_UNMATCH:
         {
-            cout<<"REQUEST_AUDIO_UNMATCH"<<endl;
+            if(message.length()>=2){
+                break;
+            }
+            cout<<"REQUEST_AUDIO_UNMATCH  "<<message<<endl;
             std_msgs::UInt32 msg;
             //发送200表示进行人脸验证，验证当前xbot前方到底有没有人
             msg.data = 200;
@@ -396,6 +404,7 @@ void onPlayFinished(int code,string message){
         case REQUEST_SIMPLE_PLAY:
         {
            cout<<"REQUEST_SIMPLE_PLAY"<<endl;
+           isChatting = false;
         }
         break;
         default:
@@ -472,6 +481,9 @@ int build_grammar(UserData *udata){
 //语音识别的结果回调
 void on_result(const char *result, char is_last){
 //    cout<<"on_result       ----  tid: "<<this_thread::get_id()<<endl;
+    if(isPlayingAudio){
+        return;
+    }
     if(result){
         size_t left = g_buffersize - 1 - strlen(g_result);
         size_t size = strlen(result);
@@ -486,6 +498,7 @@ void on_result(const char *result, char is_last){
         }
 
         strncat(g_result, result, size);
+
         if(is_last){
             isPlayingAudio = true;
             cout<<g_result<<endl;
