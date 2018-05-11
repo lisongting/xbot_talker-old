@@ -127,7 +127,7 @@ link_directories(/usr/local/lib ${PROJECT_SOURCE_DIR}/lib)
 
 add_executable(talker ${SOURCE})
 
-target_link_libraries(talker aiui msc asound pthread  ${catkin_LIBRARIES})
+target_link_libraries(talker aiui msc asound pthread  curl ${catkin_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

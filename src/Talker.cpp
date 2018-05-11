@@ -14,6 +14,7 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "qisr.h"
+#include "qtts.h"
 #include "msp_cmn.h"
 #include "msp_errors.h"
 
@@ -22,6 +23,7 @@
 //#include "../include/rapidjson/writer.h"
 //#include "../include/rapidjson/stringbuffer.h"
 //#include "../include/qisr.h"
+//#include "../include/qtts.h"
 //#include "../include/msp_cmn.h"
 //#include "../include/msp_errors.h"
 
@@ -97,6 +99,93 @@ int Talker::init(string basepath){
 //        cout<<"Upload hot words failed. Retrying"<<endl;
 //    }
     return 0;
+}
+
+//[离线]将文字转换成音频并播放
+int Talker::text_to_speech(char* src_text,on_play_finished callback){
+    int          ret = -1;
+    FILE*     fp  = NULL;
+    const char*  sessionID    = NULL;
+    unsigned int audio_len    = 0;
+    wave_pcm_hdr wav_hdr      = default_wav_hdr;
+    int          synth_status = MSP_TTS_FLAG_STILL_HAVE_DATA;
+//    string login_params = "appid = 5a52e95f, work_dir = "+basePath+"/assets";
+//    ret = MSPLogin(NULL, NULL, login_params.c_str()); //第一个参数是用户名，第二个参数是密码，第三个参数是登录参数，用户名和密码可在http://www.xfyun.cn注册获取
+//    if (MSP_SUCCESS != ret)
+//    {
+//        printf("MSPLogin failed, error code: %d.\n", ret);
+//        return -1;//登录失败，退出登录
+//    }
+    //临时生成的音频文件
+    string tmpFile = basePath+"/assets/wav/tmp.wav";
+    const char* tts_begin_params = "engine_type = local,voice_name=xiaoyan, text_encoding = UTF8, "
+                                   "tts_res_path = fo|res/tts/xiaoyan.jet;fo|res/tts/common.jet, "
+                                   "sample_rate = 16000, speed = 50, volume = 50, pitch = 50, rdn = 2";
+    if (NULL == src_text){
+        cout<<"param is error!"<<endl;
+        return ret;
+    }
+    fp = fopen(tmpFile.c_str(), "wb");
+    if (NULL == fp){
+        cout<<"open file path error "<< tmpFile<<endl;
+        return ret;
+    }
+    /* 开始合成 */
+    sessionID = QTTSSessionBegin(tts_begin_params, &ret);
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSSessionBegin failed, error code: "<<ret<<endl;
+        fclose(fp);
+        return ret;
+    }
+    ret = QTTSTextPut(sessionID, src_text, (unsigned int)strlen(src_text), NULL);
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSTextPut failed, error code:"<<ret<<endl;
+        QTTSSessionEnd(sessionID, "TextPutError");
+        fclose(fp);
+        return ret;
+    }
+
+    fwrite(&wav_hdr, sizeof(wav_hdr) ,1, fp); //添加wav音频头，使用采样率为16000
+    while (1){
+        /* 获取合成音频 */
+        const void* data = QTTSAudioGet(sessionID, &audio_len, &synth_status, &ret);
+        if (MSP_SUCCESS != ret)
+            break;
+        if (NULL != data) {
+            fwrite(data, audio_len, 1, fp);
+            wav_hdr.data_size += audio_len; //计算data_size大小
+        }
+        if (MSP_TTS_FLAG_DATA_END == synth_status)
+            break;
+    }
+
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSAudioGet failed, error code: "<<ret<<endl;
+        QTTSSessionEnd(sessionID, "AudioGetError");
+        fclose(fp);
+        return ret;
+    }
+    /* 修正wav文件头数据的大小 */
+    wav_hdr.size_8 += wav_hdr.data_size + (sizeof(wav_hdr) - 8);
+
+    /* 将修正过的数据写回文件头部,音频文件为wav格式 */
+    fseek(fp, 4, 0);
+    //写入size_8的值
+    fwrite(&wav_hdr.size_8,sizeof(wav_hdr.size_8), 1, fp);
+    //将文件指针偏移到存储data_size值的位置
+    fseek(fp, 40, 0);
+    //写入data_size的值
+    fwrite(&wav_hdr.data_size,sizeof(wav_hdr.data_size), 1, fp);
+    fclose(fp);
+    fp = NULL;
+    /* 合成完毕 */
+    ret = QTTSSessionEnd(sessionID, "Normal");
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSSessionEnd failed, error code: "<<ret<<endl;
+    }
+    cout<<"Synthesize completed."<<endl;
+   play((char*)tmpFile.c_str(),REQUEST_TTS,callback);
+    return ret;
 }
 
 //根据传入的文本进行语音对话或根据文字查找前往目标，

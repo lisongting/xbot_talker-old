@@ -96,6 +96,8 @@ static const int REQUEST_VERIFY_COMPLETE = 9;
 //语音控制Xbot进行移动
 static const int REQUEST_MOVE = 10;
 
+static const int REQUEST_TTS = 11;
+
 static void simple_call_back(int code,std::string message){
 
 }
@@ -116,6 +118,6 @@ public:
 	int chat(std::string  chatMsg,on_play_finished callback);
         int play(char* file,int requestcode,on_play_finished  callback);
 	int informWhenReachGoal(std::string name,on_play_finished callback);
-	
+        int text_to_speech( char* src_text,on_play_finished callback);
 };
 

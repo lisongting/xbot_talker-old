@@ -13,15 +13,16 @@
 #include <std_msgs/UInt32.h>
 #include <xbot_msgs/FaceResult.h>
 #include <geometry_msgs/Twist.h>
-#include "AIUITest.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/document.h"
-#include "Talker.h"
-#include "speech_recognizer.h"
-#include "qisr.h"
-#include "msp_cmn.h"
-#include "msp_errors.h"
+#include <AIUITest.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/document.h>
+#include <Talker.h>
+#include <speech_recognizer.h>
+#include <qisr.h>
+#include <msp_cmn.h>
+#include <msp_errors.h>
+#include <curl/curl.h>
 
 //#include "../include/AIUITest.h"
 //#include "../include/rapidjson/writer.h"
@@ -32,6 +33,7 @@
 //#include "../include/qisr.h"
 //#include "../include/msp_cmn.h"
 //#include "../include/msp_errors.h"
+//#include </usr/include/curl/curl.h>
 
 using namespace std;
 
@@ -55,6 +57,8 @@ void onPlayFinished(int code,string message);
 void on_result(const char *result, char is_last);
 void on_speech_begin();
 void on_speech_end(int reason);
+void do_post(const char* chatText);
+size_t post_callback(void *buffer, size_t size, size_t nmemb, void *userp);
 void signal_handler(int s);
 
 void* offline_voice_recog_thread(void* session_begin_params);
@@ -67,6 +71,7 @@ const char* subscribe_topic_face_recog ="/office/face_result";
 const char* goal_name_pub_topic ="/office/goal_name";//携带的数据为拼音
 const char* next_loop_pub_topic = "/office/next_loop";
 const char* movement_pub_topic = "/cmd_vel_mux/input/teleop";
+const char* post_url = (char*)"https://www.easy-mock.com/mock/5aeffb48516361545a03a8bb/example/p";
 string basePath ;
 ros::Publisher goal_name_pub;
 ros::Publisher next_loop_pub;
@@ -114,7 +119,7 @@ int main(int argc,char** argv){
     }else{
         cout<<"Talker init success"<<endl;
     }
-    ASR_RES_PATH = "fo|res/common.jet";  //这个路径前必须加一个fo|，否则就会语法构建不通过
+    ASR_RES_PATH = "fo|res/asr/common.jet";  //这个路径前必须加一个fo|，否则就会语法构建不通过
     GRAMMAR_BUILD_PATH = "res/gramBuild";
     GRAMMAR_FILE = basePath+"/assets/grammar.bnf";//自定义语法文件
 
@@ -125,36 +130,39 @@ int main(int argc,char** argv){
         exit(0);
     }
 
-    memset(&asr_data, 0, sizeof(UserData));
-    cout<<"Start building offline grammar for recognition ..."<<endl;
-     //第一次使用某语法进行识别，需要先构建语法网络，获取语法ID，之后使用此语法进行识别，无需再次构建
-    ret = build_grammar(&asr_data);
-    if (MSP_SUCCESS != ret) {
-        cout<<"Building grammar failed!"<<endl;
-       exit(0);
-    }
-    while (1 != asr_data.build_fini){
-        usleep(300 * 1000);
-    }
-    if (MSP_SUCCESS != asr_data.errcode){
-        exit(0);
-    }
-    isChatting = false;
+    char* text = (char*)"第一次使用某语法进行识别，需要先构建语法网络，获取语法ID，之后使用此语法进行识别，无需再次构建";
+    talker.text_to_speech(text,onPlayFinished);
 
-    //离线语法识别参数设置
-    snprintf(asr_params, MAX_PARAMS_LEN - 1,
-             "engine_type = local, asr_denoise=1,vad_bos=10000,vad_eos=10000,\
-             asr_res_path = %s, sample_rate = %d, \
-             grm_build_path = %s, local_grammar = %s, \
-             result_type = json, result_encoding = UTF-8 ",
-             ASR_RES_PATH.c_str(),
-             SAMPLE_RATE_16K,
-             GRAMMAR_BUILD_PATH.c_str(),
-             asr_data.grammar_id
-             );
-    if(asr_params!=NULL){
-        pthread_create(&record_thread_id,NULL,offline_voice_recog_thread,(void*)asr_params);
-    }
+//    memset(&asr_data, 0, sizeof(UserData));
+//    cout<<"Start building offline grammar for recognition ..."<<endl;
+//     //第一次使用某语法进行识别，需要先构建语法网络，获取语法ID，之后使用此语法进行识别，无需再次构建
+//    ret = build_grammar(&asr_data);
+//    if (MSP_SUCCESS != ret) {
+//        cout<<"Building grammar failed!"<<endl;
+//       exit(0);
+//    }
+//    while (1 != asr_data.build_fini){
+//        usleep(300 * 1000);
+//    }
+//    if (MSP_SUCCESS != asr_data.errcode){
+//        exit(0);
+//    }
+//    isChatting = false;
+
+//    //离线语法识别参数设置
+//    snprintf(asr_params, MAX_PARAMS_LEN - 1,
+//             "engine_type = local, asr_denoise=1,vad_bos=10000,vad_eos=10000,\
+//             asr_res_path = %s, sample_rate = %d, \
+//             grm_build_path = %s, local_grammar = %s, \
+//             result_type = json, result_encoding = UTF-8 ",
+//             ASR_RES_PATH.c_str(),
+//             SAMPLE_RATE_16K,
+//             GRAMMAR_BUILD_PATH.c_str(),
+//             asr_data.grammar_id
+//             );
+//    if(asr_params!=NULL){
+//        pthread_create(&record_thread_id,NULL,offline_voice_recog_thread,(void*)asr_params);
+//    }
     ros::spin();
     signal(SIGINT,signal_handler);
     return 0;
@@ -407,6 +415,12 @@ void onPlayFinished(int code,string message){
            isChatting = false;
         }
         break;
+        case REQUEST_TTS:
+        {
+            cout<<"REQUEST_TTS"<<endl;
+             isPlayingAudio = false;
+        }
+        break;
         default:
         break;
     }
@@ -503,9 +517,10 @@ void on_result(const char *result, char is_last){
             isPlayingAudio = true;
             cout<<g_result<<endl;
 
-            const string final_result = parse_result_from_json(g_result);
+            string final_result = parse_result_from_json(g_result);
             cout<<"Speech result : "<<final_result.c_str()<<endl;
-            talker.chat(final_result,onPlayFinished);
+//            talker.chat(final_result,onPlayFinished);
+            do_post(final_result.c_str());
         }
     }
 }
@@ -561,6 +576,52 @@ const string parse_result_from_json(char*  jsonContent){
     }
     return empty;
 }
+
+size_t post_callback(void *buffer, size_t size, size_t nmemb, void *userp){
+    FILE *fptr = (FILE*)userp;
+    char str[500] ;
+   fwrite(buffer, size, nmemb, (FILE*)userp);
+//    cout<<"write file success"<<endl;
+    fseek(fptr, SEEK_SET, 0);
+    fgets(str,500,fptr);
+    cout<<str<<endl;
+
+    talker.text_to_speech(str,onPlayFinished);
+
+
+    return size*nmemb;
+}
+
+void do_post(const char* chatText){
+    CURL *curl;
+    CURLcode res;
+    FILE *fptr;
+    char* FILENAME = "log.txt";
+
+    if ((fptr = fopen(FILENAME, "w+")) == NULL) {
+        cout<<"fopen file error:"<<FILENAME<<endl;
+        exit(1);
+    }
+    char* POSTFIELDS = (char*)"aaa=aaa&bbb=bbb&ccc=ccc";
+
+    curl = curl_easy_init();
+    curl_easy_setopt(curl, CURLOPT_URL, post_url);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, POSTFIELDS);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, post_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fptr);
+    curl_easy_setopt(curl, CURLOPT_POST, 1);
+//       curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+//       curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    res = curl_easy_perform(curl);
+    if(res != CURLE_OK){
+        cout<<curl_easy_strerror(res)<<endl;
+        cout<<"Please check your network."<<endl;
+    }
+    curl_easy_cleanup(curl);
+}
+
+
 
 void signal_handler(int s){
     ros::shutdown();
