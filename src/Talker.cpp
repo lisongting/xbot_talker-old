@@ -176,10 +176,15 @@ int Talker::greetByName(string goalname,on_play_finished callback){
         for(int i=0;i<arr.Size();i++){
             Value& v = arr[i];
             Value& vname = v["name"];
-            if(goalname.find(vname.GetString())!=-1){
+            //
+             if(goalname.find(vname.GetString())!=-1){
                 Value& vaudio =  v["greet_audio"];
                 string filename = basePath+"/assets/"+vaudio.GetString();
-                play((char*)filename.c_str(),REQUEST_GREET_STAFF,callback);
+                if(goalname.find("xiaoguan")!=-1){
+                    play((char*)filename.c_str(),REQUEST_GREET_VIP,callback);
+                }else{
+                    play((char*)filename.c_str(),REQUEST_GREET_STAFF,callback);
+                }
                 return 0;
             }
         }

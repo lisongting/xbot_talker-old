@@ -255,7 +255,7 @@ void onGetFaceResult(const xbot_msgs::FaceResult& faceResult){
             msg.data = 255;
             next_loop_pub.publish(msg);
 
-        }else if(tmpName.find("unknown")!=-1){
+        }else if(tmpName.find("unknown")!=-1||tmpName.find("xiaoguan")!=-1){
             //表示目前是有人的
             string audiofile = basePath+"/assets/wav/hard.wav";
             talker.play((char*)audiofile.c_str(),REQUEST_VERIFY_COMPLETE,&onPlayFinished);
@@ -290,7 +290,6 @@ void onPlayFinished(int code,string message){
             isChatting = true;
             condition_chat.notify_one();
         }
-
         break;
         case REQUEST_CHAT:
         {
@@ -405,6 +404,15 @@ void onPlayFinished(int code,string message){
         {
            cout<<"REQUEST_SIMPLE_PLAY"<<endl;
            isChatting = false;
+        }
+        break;
+        case REQUEST_GREET_VIP:
+         {
+            cout<<"REQUEST_GREET_VIP"<<endl;
+            isPlayingAudio = false;
+            condition_playing_audio.notify_one();
+            isChatting = true;
+            condition_chat.notify_one();
         }
         break;
         default:

@@ -14,6 +14,11 @@
             "name":"fangyang",
 	    "greet_audio":"wav/greet_fangyang.wav",
             "reach_audio":"wav/reach_fangyang.wav"
+	},
+	{
+            "name":"xiaoguan",
+	    "greet_audio":"wav/greet_xiaoguan.wav",
+			"reach_audio":"wav/bye.wav"
 	}
 	
 	
