@@ -4,3 +4,5 @@
 *.d
 *.g
 /assets/msc/res/gramBuild
+*.ldata
+*.dat
