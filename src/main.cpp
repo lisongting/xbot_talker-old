@@ -489,9 +489,6 @@ int build_grammar(UserData *udata){
 //语音识别的结果回调
 void on_result(const char *result, char is_last){
 //    cout<<"on_result       ----  tid: "<<this_thread::get_id()<<endl;
-    if(isPlayingAudio){
-        return;
-    }
     if(result){
         size_t left = g_buffersize - 1 - strlen(g_result);
         size_t size = strlen(result);

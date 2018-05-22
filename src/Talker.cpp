@@ -9,14 +9,14 @@
 #include<thread>
 #include <sys/stat.h>
 #include <fstream>
-#include <Talker.h>
-#include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-#include <qisr.h>
-#include <msp_cmn.h>
-#include <msp_errors.h>
-#include <qtts.h>
+#include "Talker.h"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include "qisr.h"
+#include "msp_cmn.h"
+#include "msp_errors.h"
+#include "qtts.h"
 
 //#include "../include/Talker.h"
 //#include "../include/rapidjson/document.h"
