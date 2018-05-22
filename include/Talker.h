@@ -116,8 +116,8 @@ public:
 	int init(std::string basepath);
 	int greetByName(std::string name,on_play_finished callback);
 	int chat(std::string  chatMsg,on_play_finished callback);
-        int play(char* file,int requestcode,on_play_finished  callback);
+  int play(char* file,int requestcode,on_play_finished  callback);
 	int informWhenReachGoal(std::string name,on_play_finished callback);
-	
+	int text_to_speech(const char* src_text,const char* audioFile,int requestCode,on_play_finished callback);
 };
 

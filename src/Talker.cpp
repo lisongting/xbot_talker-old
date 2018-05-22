@@ -9,13 +9,14 @@
 #include<thread>
 #include <sys/stat.h>
 #include <fstream>
-#include "Talker.h"
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-#include "qisr.h"
-#include "msp_cmn.h"
-#include "msp_errors.h"
+#include <Talker.h>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <qisr.h>
+#include <msp_cmn.h>
+#include <msp_errors.h>
+#include <qtts.h>
 
 //#include "../include/Talker.h"
 //#include "../include/rapidjson/document.h"
@@ -24,7 +25,7 @@
 //#include "../include/qisr.h"
 //#include "../include/msp_cmn.h"
 //#include "../include/msp_errors.h"
-
+//#includde "../include/qtts.h"
 using namespace std;
 using namespace rapidjson;
 
@@ -42,7 +43,8 @@ int Talker::init(string basepath){
     string json_greeting;
     basePath = basepath;
 
-    string file_dict = basepath+"/assets/dictionary.txt";
+//    string file_dict = basepath+"/assets/dictionary.txt";
+    string file_dict = basepath+"/assets/new_dictionary.txt";
     cout<<"basePath:  "<<basepath<<endl;
 
     ifstream infile;
@@ -133,8 +135,13 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
                                 }
                                 return 0;
                             }else{
-                                string audiofile = basePath+"/assets/"+v["answer"].GetString();
-                                play((char*)audiofile.c_str(),REQUEST_CHAT,callback);
+//                                string audiofile = basePath+"/assets/"+v["answer"].GetString();
+//                                play((char*)audiofile.c_str(),REQUEST_CHAT,callback);
+                                Value& vText = v["answer"];
+                                string text = vText.GetString();
+                                Value& vFile = v["generate_audio"];
+                                string file = vFile.GetString();
+                                text_to_speech(text.c_str(),file.c_str(),REQUEST_CHAT,callback);
                                 return 0;
                             }
 
@@ -144,8 +151,13 @@ int Talker::chat(string  chatMsg,on_play_finished callback) {
                     for(int j=0;j<words.Size();j++){
                         if(chatMsg.find(words[j].GetString())!=-1){
                             if(j==words.Size()-1){
-                                string audiofile = basePath+"/assets/"+v["answer"].GetString();
-                                play((char*)audiofile.c_str(),REQUEST_CHAT,callback);
+//                                string audiofile = basePath+"/assets/"+v["answer"].GetString();
+//                                play((char*)audiofile.c_str(),REQUEST_CHAT,callback);
+                                Value& vText = v["answer"];
+                                string text = vText.GetString();
+                                Value& vFile = v["generate_audio"];
+                                string file = vFile.GetString();
+                                text_to_speech(text.c_str(),file.c_str(),REQUEST_CHAT,callback);
                                 return 0;
                             }
                         }else{
@@ -218,6 +230,86 @@ int Talker::informWhenReachGoal(string name,on_play_finished callback){
         cout<<"Parse error"<<endl;
         return -1;
     }
+}
+
+//[离线]将文字转换成音频并播放
+int Talker::text_to_speech(const char* srcText,const char* audioFile,int requestCode,on_play_finished callback){
+    int          ret = -1;
+    FILE*     fp  = NULL;
+    const char*  sessionID    = NULL;
+    unsigned int audio_len    = 0;
+    wave_pcm_hdr wav_hdr      = default_wav_hdr;
+    int          synth_status = MSP_TTS_FLAG_STILL_HAVE_DATA;
+    //临时生成的音频文件
+    string tmpFile = basePath+"/assets/wav/"+audioFile;
+    const char* tts_begin_params = "engine_type = local,voice_name=xiaoyan, text_encoding = UTF8, "
+                                   "tts_res_path = fo|res/tts/xiaoyan.jet;fo|res/tts/common.jet, "
+                                   "sample_rate = 16000, speed = 50, volume = 50, pitch = 50, rdn = 2";
+    if (NULL == srcText){
+        cout<<"param is error!"<<endl;
+        return ret;
+    }
+    fp = fopen(tmpFile.c_str(), "wb");
+    if (NULL == fp){
+        cout<<"open file path error "<< tmpFile<<endl;
+        return ret;
+    }
+    /* 开始合成 */
+    sessionID = QTTSSessionBegin(tts_begin_params, &ret);
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSSessionBegin failed, error code: "<<ret<<endl;
+        fclose(fp);
+        return ret;
+    }
+    ret = QTTSTextPut(sessionID, srcText, (unsigned int)strlen(srcText), NULL);
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSTextPut failed, error code:"<<ret<<endl;
+        QTTSSessionEnd(sessionID, "TextPutError");
+        fclose(fp);
+        return ret;
+    }
+
+    fwrite(&wav_hdr, sizeof(wav_hdr) ,1, fp); //添加wav音频头，使用采样率为16000
+    while (1){
+        /* 获取合成音频 */
+        const void* data = QTTSAudioGet(sessionID, &audio_len, &synth_status, &ret);
+        if (MSP_SUCCESS != ret)
+            break;
+        if (NULL != data) {
+            fwrite(data, audio_len, 1, fp);
+            wav_hdr.data_size += audio_len; //计算data_size大小
+        }
+        if (MSP_TTS_FLAG_DATA_END == synth_status)
+            break;
+    }
+
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSAudioGet failed, error code: "<<ret<<endl;
+        QTTSSessionEnd(sessionID, "AudioGetError");
+        fclose(fp);
+        return ret;
+    }
+    /* 修正wav文件头数据的大小 */
+    wav_hdr.size_8 += wav_hdr.data_size + (sizeof(wav_hdr) - 8);
+
+    /* 将修正过的数据写回文件头部,音频文件为wav格式 */
+    fseek(fp, 4, 0);
+    //写入size_8的值
+    fwrite(&wav_hdr.size_8,sizeof(wav_hdr.size_8), 1, fp);
+    //将文件指针偏移到存储data_size值的位置
+    fseek(fp, 40, 0);
+    //写入data_size的值
+    fwrite(&wav_hdr.data_size,sizeof(wav_hdr.data_size), 1, fp);
+    fclose(fp);
+    fp = NULL;
+    /* 合成完毕 */
+    ret = QTTSSessionEnd(sessionID, "Normal");
+    if (MSP_SUCCESS != ret){
+        cout<<"QTTSSessionEnd failed, error code: "<<ret<<endl;
+    }
+    cout<<"Synthesize completed."<<endl;
+   play((char*)tmpFile.c_str(),requestCode,callback);
+    return ret;
 }
 
 
@@ -352,58 +444,4 @@ int Talker::play(char* file,int requestCode,on_play_finished  callback){
     free(buffer);
     return 0;
 }
-
-//上传热词
-int Talker::uploadHotWords(){
-    string login_parameters = "appid = 5a52e95f, work_dir = "+basePath+"/assets";
-
-    int r = MSPLogin(NULL,NULL,login_parameters.c_str());
-    if(MSP_SUCCESS !=r){
-        cout<<"Login Failed ,Error code :"<<r<<endl;
-    }
-
-    char* userwords =	 NULL;
-    size_t	 len =	0;
-    size_t	 read_len =0;
-    FILE* fp	 =	NULL;
-    int ret =	-1;
-    string file = basePath+"/assets/hotwords.txt";
-    fp = fopen(file.c_str(), "rb");
-    if (NULL == fp){
-        cout<<"open [hotwords.txt] failed! "<<endl;
-    }
-    fseek(fp, 0, SEEK_END);
-    len = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    userwords = (char*)malloc(len + 1);
-    if (NULL == userwords){
-        cout<<"out of memory! "<<endl;
-        return -1;
-    }
-    read_len = fread((void*)userwords, 1, len, fp);
-    if (read_len != len){
-        cout<<"read [hotwords.txt] failed!"<<endl;
-        return -1;
-    }
-    userwords[len] = '\0';
-    MSPUploadData("userwords", userwords, len, "sub = uup, dtt = userword", &ret);
-
-    if (MSP_SUCCESS != ret){
-        cout<<"MSPUploadData failed ! errorCode:"<< ret<<endl;
-        if(ret==10114){
-            string audio_file = basePath+"/assets/wav/networktimeout.wav";
-            MSPLogout();
-            play((char*)audio_file.c_str(),REQUEST_SIMPLE_PLAY,simple_call_back);
-        }
-        return -1;
-    }
-   MSPLogout();
-    return 0;
-}
-
-
-
-
-
-
 

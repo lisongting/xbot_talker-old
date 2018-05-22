@@ -114,7 +114,7 @@ int main(int argc,char** argv){
     }else{
         cout<<"Talker init success"<<endl;
     }
-    ASR_RES_PATH = "fo|res/common.jet";  //这个路径前必须加一个fo|，否则就会语法构建不通过
+    ASR_RES_PATH = "fo|res/asr/common.jet";  //这个路径前必须加一个fo|，否则就会语法构建不通过
     GRAMMAR_BUILD_PATH = "res/gramBuild";
     GRAMMAR_FILE = basePath+"/assets/grammar.bnf";//自定义语法文件
 
@@ -174,7 +174,7 @@ void* offline_voice_recog_thread(void* session_begin_params){
     while(true){
         //对话同步锁
         //问候完访客时 -- 开启该线程
-        //对话60s超时或得到目标位置点  -- 挂起该线程
+        //对话超时或得到目标位置点  -- 挂起该线程
         unique_lock<mutex> lock1(mutex_chat);
         condition_chat.wait(lock1,[]{return isChatting;});
 
